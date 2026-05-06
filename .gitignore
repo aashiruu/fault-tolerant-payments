@@ -5,3 +5,9 @@ __pycache__/
 *.db
 .terraform/
 terraform.tfstate*
+*.zip
+*.plan
+.terraform/
+terraform.tfstate*
+__pycache__/
+*.pyc
