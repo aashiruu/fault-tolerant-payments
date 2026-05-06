@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-worker
+  template:
+    metadata:
+      labels:
+        app: payment-worker
+    spec:
+      containers:
+      - name: worker
+        image: 870676149863.dkr.ecr.us-east-1.amazonaws.com/payment-system:latest
+        command: ["python", "-m", "services.worker.main"]
+        env:
+        - name: PROVIDER_URL
+          value: "http://payment-provider:8001/charge"
+        - name: PYTHONPATH
+          value: "/app"
+        envFrom:
+        - configMapRef:
+            name: payment-system-config

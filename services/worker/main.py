@@ -1,10 +1,10 @@
 import pika
 import json
 import time
+import os
+import requests
 from services.shared.database import SessionLocal
 from services.shared.models import Payment, PaymentStatus
-
-import requests
 from prometheus_client import start_http_server, Counter, Histogram
 
 # Metrics
@@ -34,15 +34,17 @@ def process_payment(ch, method, properties, body):
             payment.status = PaymentStatus.PENDING
             db.commit()
 
-            # Call Mock Provider
+            provider_url = os.getenv('PROVIDER_URL', 'http://localhost:8001/charge')
+
             response = requests.post(
-                "http://localhost:8001/charge",
-                json={"request_id": request_id, "amount": 100.0}
+                provider_url,
+                json={"request_id": request_id, "amount": 100.0},
+                timeout=10
             )
             res_data = response.json()
 
             # Update final state
-            if res_data["status"] == "SUCCESS":
+            if res_data["status"].upper() == "SUCCESS":
                 payment.status = PaymentStatus.SUCCESS
             else:
                 payment.status = PaymentStatus.FAILED
@@ -64,14 +66,16 @@ def process_payment(ch, method, properties, body):
             db.close()
 
 def start_worker():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    rabbitmq_host = os.getenv('RABBITMQ_HOST', 'localhost')
+
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))
     channel = connection.channel()
     channel.queue_declare(queue='payment_jobs', durable=True)
 
     channel.basic_qos(prefetch_count=1)
 
     channel.basic_consume(queue='payment_jobs', on_message_callback=process_payment)
-    print(" [*] Worker started. Waiting for messages. To exit press CTRL+C")
+    print(f" [*] Worker started (Host: {rabbitmq_host}). Waiting for messages.")
     channel.start_consuming()
 
 if __name__ == "__main__":

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-system-config
+data:
+  REDIS_HOST: "redis"
+  DB_HOST: "postgres"
+  DB_NAME: "payments"
+  DB_USER: "payment_user"
+  RABBITMQ_HOST: "rabbitmq"
+  PROVIDER_URL: "http://payment-provider:8001/charge"

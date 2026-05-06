@@ -13,3 +13,7 @@
 ## Network Topology: Public vs. Private Subnets
 **Decision:** Postgres and Workers live in Private Subnets. API Load Balancer in Public Subnet.
 **Reasoning:** This minimizes the attack surface. The Database and Workers do not need to be reachable from the internet; they only need to talk to each other and the internal API. Only the Load Balancer is exposed to handle client traffic.
+
+## Network Topology: Public vs. Private Subnets
+**Decision:** We place the Postgres Database and Payment Workers in Private Subnets, while the API Load Balancer resides in Public Subnets.
+**Reasoning:** This architecture provides "Defense in Depth" by ensuring the most sensitive components (containing transaction data and processing logic) have no direct route from the public internet, significantly reducing the attack surface. Only the Load Balancer is exposed to handle client traffic, acting as a controlled entry point that forwards requests internally.
