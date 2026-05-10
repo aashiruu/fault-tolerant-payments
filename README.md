@@ -2,7 +2,7 @@
 
 A high-concurrency, asynchronous payment processing system built with **FastAPI**, **RabbitMQ**, and **Redis**, deployed on **AWS EKS** via **Terraform** and **GitHub Actions**.
 
-## 🚀 The Architecture
+## The Architecture
 This project demonstrates a production-grade "Reliable Worker" pattern, ensuring that payments are never lost and customers are never double-charged.
 
 ```mermaid
@@ -35,7 +35,7 @@ graph TD
 * **Payment Worker (Python):** Consumes jobs, communicates with external providers, and manages state transitions.
 * **Observability (Prometheus & Grafana):** Full-stack monitoring of system health and custom payment metrics.
 
-## 🛠️ Technical Challenges & Solutions
+## Technical Challenges & Solutions
 
 ### 1. Internal K8s Networking (The DNS Hurdle)
 **Challenge:** The Worker service initially failed to reach the Provider mock due to internal DNS resolution issues within the VPC.
@@ -49,13 +49,13 @@ graph TD
 **Challenge:** Risk of duplicate charges during network retries or client-side double-clicks.
 **Solution:** Implemented a Redis-backed locking mechanism using the `X-Request-ID` header. This ensures that the system is idempotent, even if the API receives the same request multiple times.
 
-## 📊 Observability
+## Observability
 The system is fully instrumented using the `kube-prometheus-stack`. Key metrics monitored include:
 * **Throughput:** Payment success/failure rates via custom Prometheus counters.
 * **Latency:** Time spent processing payments through the worker.
 * **Saturation:** CPU and Memory utilization across all microservices to inform scaling decisions.
 
-## 🛠 Deployment & Migration
+## Deployment & Migration
 This infrastructure is fully account-agnostic and managed via **Terraform**.
 
 ### To Re-run in a New Account:
@@ -64,4 +64,3 @@ This infrastructure is fully account-agnostic and managed via **Terraform**.
 3.  **Deploy:** Push to the `master` branch to trigger the automated **GitHub Actions** deployment.
 
 ---
-*Created by Okikiola Ashiru - Cloud & DevOps Engineer*
