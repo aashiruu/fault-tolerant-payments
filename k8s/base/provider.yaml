@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: provider
-        image: 870676149863.dkr.ecr.us-east-1.amazonaws.com/payment-system:latest
+        image: 529088258981.dkr.ecr.us-east-1.amazonaws.com/payment-system:latest
         command: ["python", "-m", "uvicorn", "services.api.mock_provider:app", "--host", "0.0.0.0", "--port", "8001"]
         env:
         - name: PYTHONPATH

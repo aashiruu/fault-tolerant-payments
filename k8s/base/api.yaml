@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: 870676149863.dkr.ecr.us-east-1.amazonaws.com/payment-system:latest
+        image: 529088258981.dkr.ecr.us-east-1.amazonaws.com/payment-system:latest
         command: ["uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
         env:
         - name: PYTHONUNBUFFERED
