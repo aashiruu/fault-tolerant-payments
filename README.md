@@ -1,15 +1,15 @@
 # Fault-Tolerant Payment Engine
 
-A high-concurrency, asynchronous payment processing system built with **FastAPI**, **RabbitMQ**, and **Redis**, deployed on **AWS EKS** via **Terraform** and **GitHub Actions**.
+A production-grade, asynchronous payment processing system engineered for high reliability, idempotency, and full observability. Deployed on **AWS EKS** via **Terraform** and **GitHub Actions**.
 
-## The Architecture
-This project demonstrates a production-grade "Reliable Worker" pattern, ensuring that payments are never lost and customers are never double-charged.
+## 🏗 System Architecture
+The system utilizes a decoupled, event-driven architecture to ensure that payment ingestion is non-blocking and processing is resilient to downstream failures.
 
 ```mermaid
 graph TD
     User((User/Client)) -->|1. POST /v1/payments| API[Payment API - FastAPI]
     
-    subgraph "Ingestion & Security"
+    subgraph "Ingestion & Safety"
         API -->|2. Check/Set ID| Redis[(Redis - Idempotency)]
         API -->|3. Create Record| DB[(Postgres - Payments DB)]
         API -->|4. Publish Job| RMQ[RabbitMQ - Jobs Queue]
@@ -21,61 +21,52 @@ graph TD
         Worker -->|7. Update Status| DB
     end
 
-    subgraph "Observability Layer"
+    subgraph "SRE Observability"
         Prom[Prometheus] -->|Scrape /metrics| API
         Prom -->|Scrape /metrics| Worker
         Prom -->|Data Source| Grafana[Grafana Dashboards]
     end
 ```
 
-### Core Components:
-* **Payment API (FastAPI):** Handles incoming requests, enforces idempotency, and offloads processing to RabbitMQ.
-* **Idempotency Layer (Redis):** Uses `X-Request-ID` headers to prevent duplicate transactions.
-* **Message Broker (RabbitMQ):** Acts as a durable buffer between the API and the worker.
-* **Payment Worker (Python):** Consumes jobs, communicates with external providers, and manages state transitions.
-* **Observability (Prometheus & Grafana):** Full-stack monitoring of system health and custom payment metrics.
+## 🚀 Key Engineering Features
+* **Distributed Idempotency:** Implemented a Redis-based locking mechanism using `X-Request-ID` headers to prevent duplicate transactions (double-charging) in high-concurrency scenarios.
+* **Event-Driven Resiliency:** Leverages RabbitMQ as a durable message broker. If the worker or the external payment provider is unavailable, payment jobs are persisted in the queue and processed automatically upon recovery.
+* **Database Schema Design:** Relational Postgres schema designed for transactional integrity, tracking the full lifecycle of a payment from `QUEUED` to `PENDING` to `SUCCESS`.
+* **Infrastructure as Code (IaC):** 100% automated provisioning of VPC, Subnets, NAT Gateways, and EKS Cluster using modular Terraform.
 
-## Technical Challenges & Solutions
+## 🛠 Technical Challenges & War Stories
+### 1. The DNS Discovery Problem
+**Challenge:** Initially, the Worker service could not resolve the Provider's internal K8s service name, causing processing loops.
+**Solution:** Diagnosed the CoreDNS resolution path within the EKS VPC and updated the worker's environment configuration to use the fully qualified domain name (FQDN) `payment-provider.default.svc.cluster.local`.
 
-### 1. Internal K8s Networking (The DNS Hurdle)
-**Challenge:** The Worker service initially failed to reach the Provider mock due to internal DNS resolution issues within the VPC.
-**Solution:** Diagnosed the K8s DNS resolution path and corrected the internal provider URL to follow the pattern `http://payment-provider.default.svc.cluster.local`. Verified connectivity using ephemeral debug containers.
+### 2. Status Normalization Logic
+**Challenge:** Payments were failing to transition to a 'SUCCESS' state because the external mock provider returned uppercase status strings while the worker expected lowercase.
+**Solution:** Implemented string normalization in the processing logic to ensure the state machine is robust against varying third-party API response formats.
 
-### 2. Logic Robustness (Case Sensitivity)
-**Challenge:** Payments were hanging in 'PENDING' because the Mock Provider returned "SUCCESS" while the worker logic looked for "success".
-**Solution:** Implemented string normalization (`.upper()`) across the processing pipeline to ensure state machine transitions are robust against external API variations.
+### 3. Multi-Account Migration
+**Challenge:** Successfully migrated the entire infrastructure stack between two separate AWS accounts in under 15 minutes.
+**Solution:** Leveraged Terraform's state management and account-agnostic CI/CD pipelines to recreate the environment with zero code changes, demonstrating true environment portability.
 
-### 3. Distributed Idempotency
-**Challenge:** Risk of duplicate charges during network retries or client-side double-clicks.
-**Solution:** Implemented a Redis-backed locking mechanism using the `X-Request-ID` header. This ensures that the system is idempotent, even if the API receives the same request multiple times.
+## 📊 Observability Proof-of-Work
 
-## Observability
-The system is fully instrumented using the `kube-prometheus-stack`. Key metrics monitored include:
-* **Throughput:** Payment success/failure rates via custom Prometheus counters.
-* **Latency:** Time spent processing payments through the worker.
-* **Saturation:** CPU and Memory utilization across all microservices to inform scaling decisions.
+### CI/CD Pipeline
+Fully automated Build-Test-Deploy pipeline in GitHub Actions.
+![Pipeline](docs/pipeline-success.png)
 
-## Deployment & Migration
-This infrastructure is fully account-agnostic and managed via **Terraform**.
+### SRE Dashboards
+Real-time monitoring of CPU/Memory saturation and network throughput.
+![Resources](docs/resource-usage.png)
+![Network](docs/network-metrics.png)
 
-### To Re-run in a New Account:
-1.  **Infrastructure:** Run `terraform apply` in `infra/terraform/`.
-2.  **Secrets:** Update `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in GitHub Secrets.
-3.  **Deploy:** Push to the `master` branch to trigger the automated **GitHub Actions** deployment.
+### Cluster Orchestration
+High-availability pod distribution across EKS nodes.
+![Pods](docs/pods-running.png)
+
+## 🛠 Deployment & Local Setup
+### To Deploy to AWS:
+1.  Initialize infrastructure: `cd infra/terraform && terraform apply`
+2.  Update GitHub Secrets with new AWS credentials.
+3.  Push to `master` to trigger the automated rollout.
 
 ---
-
-## Project Gallery
-
-### 1. Automated CI/CD Pipeline
-Proof of account-agnostic deployment across AWS environments.
-![GitHub Actions Success](https://github.com/aashiruu/fault-tolerant-payments/blob/master/docs/pipeline-success.png?raw=true)
-
-### 2. Infrastructure Monitoring
-Real-time visibility into microservices health using Prometheus and Grafana.
-![Grafana Resource Usage](https://github.com/aashiruu/fault-tolerant-payments/blob/master/docs/resource-usage.png?raw=true)
-![Grafana Network Bandwidth](https://github.com/aashiruu/fault-tolerant-payments/blob/master/docs/network-metrics.png?raw=true)
-
-### 3. Orchestration State
-Current state of the 5-service cluster in the new AWS environment.
-![Kubectl Get Pods](https://github.com/aashiruu/fault-tolerant-payments/blob/master/docs/pods-running.png?raw=true)
+*Developed by Okikiola Ashiru — Cloud & DevOps Engineer*
