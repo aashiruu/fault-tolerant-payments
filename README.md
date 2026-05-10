@@ -64,3 +64,18 @@ This infrastructure is fully account-agnostic and managed via **Terraform**.
 3.  **Deploy:** Push to the `master` branch to trigger the automated **GitHub Actions** deployment.
 
 ---
+
+## Project Gallery
+
+### 1. Automated CI/CD Pipeline
+Proof of account-agnostic deployment across AWS environments.
+![GitHub Actions Success](https://github.com/aashiruu/fault-tolerant-payments/blob/master/docs/pipeline-success.png?raw=true)
+
+### 2. Infrastructure Monitoring
+Real-time visibility into microservices health using Prometheus and Grafana.
+![Grafana Resource Usage](https://github.com/aashiruu/fault-tolerant-payments/blob/master/docs/resource-usage.png?raw=true)
+![Grafana Network Bandwidth](https://github.com/aashiruu/fault-tolerant-payments/blob/master/docs/network-metrics.png?raw=true)
+
+### 3. Orchestration State
+Current state of the 5-service cluster in the new AWS environment.
+![Kubectl Get Pods](https://github.com/aashiruu/fault-tolerant-payments/blob/master/docs/pods-running.png?raw=true)
